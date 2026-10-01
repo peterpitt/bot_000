@@ -13,7 +13,7 @@
 `web/index.html`：輸入想法 → 自動分流召集 4–6 位顧問 → 星際激辯、戰略收斂、7/30/90 天藍圖、派工與金流表（自動檢查 30% 毛利底線）→ 串流產出可直接使用的最小成品（可複製／下載 .md）。
 
 - **線上版**：發布為 claude.ai Artifact，用你的 Claude 帳號額度執行，免設定。
-- **本機版**：`python -m consultancy serve` 後開 http://127.0.0.1:8000/ ，AI 呼叫轉給 Grok（需 `XAI_API_KEY`）。
+- **本機版**：`python -m consultancy serve` 後開 http://127.0.0.1:8066/ ，AI 呼叫轉給 Grok（需 `XAI_API_KEY`）。
 - 最近 8 筆提案只存在你的瀏覽器裡。
 
 ## 快速開始

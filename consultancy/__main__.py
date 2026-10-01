@@ -19,7 +19,7 @@ def main(argv: list[str] | None = None) -> None:
     ask.add_argument("--show-prompt", action="store_true")
     srv = sub.add_parser("serve", help="啟動網頁工作台（AI 呼叫轉給 Grok）")
     srv.add_argument("--host", default="127.0.0.1")
-    srv.add_argument("--port", type=int, default=8000)
+    srv.add_argument("--port", type=int, default=8066)
     args = parser.parse_args(argv)
 
     if args.cmd == "serve":

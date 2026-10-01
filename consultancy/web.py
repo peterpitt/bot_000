@@ -83,7 +83,7 @@ class Handler(BaseHTTPRequestHandler):
         self._json(200, {"text": text})
 
 
-def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
+def serve(host: str = "127.0.0.1", port: int = 8066) -> None:
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"星際智囊團工作台：http://{host}:{port}/  （Ctrl+C 結束）")
     if not os.environ.get("XAI_API_KEY"):

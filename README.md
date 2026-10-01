@@ -8,12 +8,21 @@
 - **智囊團召集器**：自動分流、挑 4–6 位顧問、把公司即時財務狀態放進 Grok 的 system prompt
 - 純 Python 3.10+ 標準函式庫，無外部套件
 
+## 網頁工作台
+
+`web/index.html`：輸入想法 → 自動分流召集 4–6 位顧問 → 星際激辯、戰略收斂、7/30/90 天藍圖、派工與金流表（自動檢查 30% 毛利底線）→ 串流產出可直接使用的最小成品（可複製／下載 .md）。
+
+- **線上版**：發布為 claude.ai Artifact，用你的 Claude 帳號額度執行，免設定。
+- **本機版**：`python -m consultancy serve` 後開 http://127.0.0.1:8000/ ，AI 呼叫轉給 Grok（需 `XAI_API_KEY`）。
+- 最近 8 筆提案只存在你的瀏覽器裡。
+
 ## 快速開始
 
 ```bash
 python -m consultancy org        # 組織架構
 python -m consultancy demo       # 30 萬案子拆給 3 家公司，跑完整金流
 python -m consultancy ask "要不要把網站專案外包？報價和現金流怎麼抓" --with-demo-books
+python -m consultancy serve      # 網頁工作台（本機 Grok）
 python -m unittest discover -s tests
 ```
 
@@ -58,6 +67,8 @@ consultancy/
   council.py      分流、召集顧問、組 prompt
   llm.py          離線後端／xAI Grok 後端
   demo.py         示範情境
+  web.py          網頁工作台的本機伺服器（轉接 Grok）
+web/       index.html（網頁工作台，亦發布為 Artifact）
 docs/      organization.md、cashflow.md
 tests/     單元測試
 ```

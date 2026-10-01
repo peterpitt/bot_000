@@ -1,4 +1,4 @@
-"""命令列：python -m consultancy {org|demo|ask "問題"}"""
+"""命令列：python -m consultancy {org|demo|ask "問題"|serve}"""
 from __future__ import annotations
 
 import argparse
@@ -17,9 +17,15 @@ def main(argv: list[str] | None = None) -> None:
     ask.add_argument("question")
     ask.add_argument("--with-demo-books", action="store_true", help="附上示範公司的財務狀態")
     ask.add_argument("--show-prompt", action="store_true")
+    srv = sub.add_parser("serve", help="啟動網頁工作台（AI 呼叫轉給 Grok）")
+    srv.add_argument("--host", default="127.0.0.1")
+    srv.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
 
-    if args.cmd == "org":
+    if args.cmd == "serve":
+        from .web import serve
+        serve(args.host, args.port)
+    elif args.cmd == "org":
         print("董事會／最終決策者：使用者本人（核准所有付款與不可逆決策）")
         print("策略總召：主持激辯、收斂結論\n")
         for dept, members in org_chart().items():

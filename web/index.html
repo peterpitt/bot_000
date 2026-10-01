@@ -1,0 +1,851 @@
+<title>星際智囊團工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap">
+<style>
+/* 版面概念：觀測台。左側提案單與召集星圖固定，右側是激辯紀錄長卷；手機改單欄。 */
+:root {
+  --paper: #edf0f3;
+  --panel: #f9fafb;
+  --ink: #17202b;
+  --muted: #586373;
+  --rule: #cdd4dc;
+  --brass: #94650f;
+  --brass-soft: #efe4cc;
+  --orbit: #2f4a6b;
+  --ok: #2b7a4b;
+  --warn: #a85414;
+  --bad: #b03636;
+  --ok-soft: #dcefe3;
+  --warn-soft: #f6e3d3;
+  --font-display: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.4rem;
+  --step-3: 1.85rem;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1319; --panel: #161b23; --ink: #e5e9ee; --muted: #9aa5b3; --rule: #2a323d;
+    --brass: #d9a548; --brass-soft: #362d1d; --orbit: #8fb0d6;
+    --ok: #62c08a; --warn: #e49a5c; --bad: #e57070; --ok-soft: #173325; --warn-soft: #3a2616;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1319; --panel: #161b23; --ink: #e5e9ee; --muted: #9aa5b3; --rule: #2a323d;
+  --brass: #d9a548; --brass-soft: #362d1d; --orbit: #8fb0d6;
+  --ok: #62c08a; --warn: #e49a5c; --bad: #e57070; --ok-soft: #173325; --warn-soft: #3a2616;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: var(--step-0); line-height: 1.7;
+  padding-inline: 16px; padding-block: 0 48px;
+}
+.shell { max-width: 1240px; margin-inline: auto; }
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; line-height: 1.3; margin: 0; }
+p { margin: 0; }
+.top {
+  display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between;
+  padding-block: 24px 20px; border-bottom: 1px solid var(--rule);
+}
+.brand { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.brand svg { flex: none; }
+.brand h1 { font-size: var(--step-3); letter-spacing: 0.02em; }
+.brand p { color: var(--muted); font-size: var(--step--1); }
+.engine {
+  font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; display: flex; gap: 8px; align-items: center;
+}
+.engine::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.engine[data-state="on"]::before { background: var(--ok); }
+.engine[data-state="off"]::before { background: var(--warn); }
+
+.grid { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 28px; padding-top: 24px; align-items: start; }
+@media (max-width: 880px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.intake { display: grid; gap: 20px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow-y: auto; overscroll-behavior: contain; }
+@media (max-width: 880px) { .intake { position: static; max-height: none; overflow: visible; } }
+
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); padding: 18px; }
+.label-eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass); }
+form { display: grid; gap: 12px; }
+form h2 { font-size: var(--step-2); }
+label { font-size: var(--step--1); font-weight: 500; color: var(--muted); display: block; margin-bottom: 4px; }
+textarea, input[type="text"], select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: var(--radius); padding: 8px 10px;
+}
+textarea { resize: vertical; min-height: 120px; }
+textarea:focus, input:focus, select:focus, button:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 420px) { .two { grid-template-columns: 1fr; } }
+.check { display: flex; gap: 8px; align-items: center; color: var(--ink); font-size: var(--step-0); font-weight: 400; margin: 0; }
+.check input { width: 16px; height: 16px; accent-color: var(--brass); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+button {
+  font: inherit; font-weight: 500; cursor: pointer; border-radius: var(--radius);
+  border: 1px solid var(--brass); background: var(--brass); color: var(--panel); padding: 8px 18px;
+}
+button.ghost { background: transparent; color: var(--brass); }
+button:disabled { opacity: 0.55; cursor: progress; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--step--1); color: var(--muted); }
+.steps li { display: flex; gap: 8px; align-items: baseline; }
+.steps li span:first-child { font-family: var(--font-mono); width: 1.4em; }
+.steps li[data-s="active"] { color: var(--ink); font-weight: 500; }
+.steps li[data-s="active"] span:first-child { color: var(--brass); }
+.steps li[data-s="done"] span:first-child { color: var(--ok); }
+.msg { font-size: var(--step--1); color: var(--warn); }
+
+.orbit-card h3, .history h3 { font-size: var(--step-1); margin-bottom: 8px; }
+#orbit { width: 100%; max-width: 320px; display: block; margin-inline: auto; }
+#orbit .ring { fill: none; stroke: var(--rule); }
+#orbit .ray { stroke: var(--brass); stroke-width: 1; opacity: 0.6; }
+#orbit .dot { fill: var(--panel); stroke: var(--muted); }
+#orbit .dot.on { fill: var(--brass); stroke: var(--brass); }
+#orbit text { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+#orbit text.on { fill: var(--ink); font-weight: 700; }
+#orbit .core { fill: var(--orbit); }
+#orbit .core-t { fill: var(--panel); font-size: 11px; font-weight: 700; }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { font-size: 0.75rem; border: 1px solid var(--rule); border-radius: 999px; padding: 1px 10px; color: var(--muted); white-space: nowrap; }
+.chip.brass { border-color: var(--brass); color: var(--brass); }
+.chip.ok { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.chip.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.history ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.history button {
+  width: 100%; text-align: left; background: transparent; border: 0; color: var(--ink); padding: 6px 8px;
+  display: grid; gap: 0; font-weight: 400;
+}
+.history button:hover { background: var(--paper); }
+.history small { color: var(--muted); font-family: var(--font-mono); font-size: 0.72rem; }
+.history .empty { color: var(--muted); font-size: var(--step--1); }
+
+.record { min-width: 0; display: grid; gap: 22px; }
+.toc { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--step--1); border-bottom: 1px solid var(--rule); padding-bottom: 10px; }
+.toc a { color: var(--muted); text-decoration: none; }
+.toc a:hover { color: var(--brass); }
+.banner { font-size: var(--step--1); color: var(--brass); background: var(--brass-soft); border-radius: var(--radius); padding: 8px 12px; }
+section.block { display: grid; gap: 12px; scroll-margin-top: 16px; }
+section.block > h2 { font-size: var(--step-2); display: flex; gap: 10px; align-items: baseline; }
+section.block > h2 .label-eyebrow { font-family: var(--font-mono); }
+.verdict { border-left: 3px solid var(--brass); padding: 4px 0 4px 16px; display: grid; gap: 8px; }
+.verdict .big { font-family: var(--font-display); font-size: var(--step-2); line-height: 1.45; }
+dl.kv { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+dl.kv dt { color: var(--muted); font-size: var(--step--1); padding-top: 2px; }
+dl.kv dd { margin: 0; min-width: 0; }
+@media (max-width: 520px) { dl.kv { grid-template-columns: minmax(0, 1fr); } dl.kv dd { margin-bottom: 6px; } }
+ul.plain { margin: 0; padding-left: 1.2em; }
+.debate { display: grid; gap: 0; }
+.voice { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.voice:first-child { border-top: 0; }
+.voice .who { font-weight: 700; }
+.voice .who small { display: block; font-weight: 400; color: var(--muted); font-size: 0.75rem; line-height: 1.4; }
+.voice .obj { color: var(--muted); font-size: var(--step--1); }
+.voice .obj b { color: var(--warn); font-weight: 500; }
+.voice .sym { color: var(--muted); font-size: 0.72rem; }
+@media (max-width: 520px) { .voice { grid-template-columns: minmax(0, 1fr); } }
+.quad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 620px) { .quad { grid-template-columns: minmax(0, 1fr); } }
+.quad > div { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px 14px; min-width: 0; }
+.quad h4 { font-family: var(--font-body); font-size: var(--step--1); color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+.quad .risk { border-color: var(--warn); }
+.signals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 620px) { .signals { grid-template-columns: minmax(0, 1fr); } }
+.signals > div { padding: 10px 14px; border-radius: var(--radius); min-width: 0; }
+.signals .go { background: var(--ok-soft); }
+.signals .stop { background: var(--warn-soft); }
+.signals h4 { font-family: var(--font-body); font-size: var(--step--1); margin-bottom: 2px; }
+.signals .go h4 { color: var(--ok); }
+.signals .stop h4 { color: var(--warn); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: var(--step--1); }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+th { color: var(--muted); font-weight: 500; white-space: nowrap; background: var(--paper); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td ul { margin: 0; padding-left: 1.1em; }
+.note { font-size: var(--step--1); color: var(--muted); }
+.prompt { display: grid; gap: 6px; border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px 14px; background: var(--panel); }
+.prompt pre { margin: 0; white-space: pre-wrap; font-family: var(--font-mono); font-size: 0.8rem; background: var(--paper); border-radius: 4px; padding: 10px; overflow-x: auto; }
+.prompt .meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--step--1); color: var(--muted); }
+.prompt .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+.small-btn { font-size: var(--step--1); padding: 3px 10px; }
+.funnel { display: grid; gap: 0; }
+.funnel > div { display: grid; grid-template-columns: 7em minmax(0, 1fr); gap: 12px; padding: 8px 0; border-top: 1px dashed var(--rule); }
+.funnel > div:first-child { border-top: 0; }
+.funnel .k { color: var(--brass); font-size: var(--step--1); font-weight: 500; }
+.deliver { border: 1px solid var(--brass); border-radius: var(--radius); background: var(--panel); }
+.deliver header { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
+.deliver header h3 { font-size: var(--step-1); }
+.deliver header p { color: var(--muted); font-size: var(--step--1); }
+.deliver .tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.doc { padding: 16px 20px 20px; max-width: 72ch; min-width: 0; }
+.doc h2, .doc h3, .doc h4, .doc h5 { margin: 1.1em 0 0.4em; }
+.doc h2 { font-size: var(--step-2); } .doc h3 { font-size: var(--step-1); } .doc h4, .doc h5 { font-size: var(--step-0); }
+.doc > :first-child { margin-top: 0; }
+.doc p, .doc ul, .doc ol, .doc blockquote, .doc pre, .doc .tablewrap { margin: 0 0 0.8em; }
+.doc ul, .doc ol { padding-left: 1.3em; }
+.doc li.task { list-style: none; margin-left: -1.3em; }
+.doc .box { display: inline-block; width: 1em; color: var(--brass); }
+.doc blockquote { border-left: 3px solid var(--rule); padding-left: 12px; color: var(--muted); }
+.doc pre { background: var(--paper); padding: 10px; border-radius: 4px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; }
+.doc code { font-family: var(--font-mono); font-size: 0.85em; background: var(--paper); padding: 0 4px; border-radius: 3px; }
+.doc mark { background: var(--brass-soft); color: var(--ink); padding: 0 2px; border-radius: 2px; }
+.doc hr { border: 0; border-top: 1px solid var(--rule); margin: 1em 0; }
+.next { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.next label { display: flex; gap: 10px; align-items: baseline; color: var(--ink); font-size: var(--step-0); font-weight: 400; margin: 0; }
+.next input { accent-color: var(--brass); }
+.pending { color: var(--muted); font-size: var(--step--1); padding: 16px 20px; }
+@media (prefers-reduced-motion: no-preference) {
+  .pulse { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.45; } }
+}
+</style>
+
+<div class="shell">
+  <header class="top">
+    <div class="brand">
+      <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+        <circle cx="22" cy="22" r="19" fill="none" stroke="var(--rule)"/>
+        <circle cx="22" cy="22" r="11" fill="none" stroke="var(--rule)"/>
+        <circle cx="22" cy="22" r="4.5" fill="var(--orbit)"/>
+        <circle cx="38" cy="13" r="3.2" fill="var(--brass)"/>
+        <circle cx="13" cy="30" r="2.4" fill="var(--muted)"/>
+      </svg>
+      <div>
+        <h1>星際智囊團工作台</h1>
+        <p>輸入想法，12 位行星顧問激辯收斂，交付今天就能用的最小成品</p>
+      </div>
+    </div>
+    <div class="engine" id="engine">連線檢查中</div>
+  </header>
+
+  <div class="grid">
+    <aside class="intake">
+      <form id="form" class="card">
+        <div class="label-eyebrow">提案單</div>
+        <h2>把想法交給智囊團</h2>
+        <div>
+          <label for="idea">你的想法（必填）</label>
+          <textarea id="idea" required placeholder="例如：幫台灣中小型咖啡店做 AI 客服與 IG 內容代營運"></textarea>
+        </div>
+        <div class="two">
+          <div><label for="audience">目標客群</label><input type="text" id="audience" placeholder="誰最痛、最願意付費"></div>
+          <div><label for="budget">可用資源／預算</label><input type="text" id="budget" placeholder="時間、資金、技能"></div>
+        </div>
+        <div class="two">
+          <div><label for="timeline">希望時程</label><input type="text" id="timeline" placeholder="例如：30 天內第一筆收入"></div>
+          <div>
+            <label for="mvpType">想要的最小成品</label>
+            <select id="mvpType">
+              <option value="">讓智囊團判斷</option>
+              <option>銷售頁文案</option>
+              <option>客戶訪談腳本</option>
+              <option>服務提案與報價單</option>
+              <option>社群貼文組（7 篇）</option>
+              <option>7 天驗證計畫</option>
+              <option>SOP 檢查表</option>
+              <option>AI 提示詞包</option>
+              <option>外包派工需求書</option>
+            </select>
+          </div>
+        </div>
+        <label class="check" for="outsource"><input type="checkbox" id="outsource"> 考慮把部分工作外包給其他公司</label>
+        <div class="actions">
+          <button type="submit" id="go">召集智囊團</button>
+          <button type="button" id="stop" class="ghost" hidden>停止</button>
+        </div>
+        <ol class="steps" id="steps" aria-live="polite">
+          <li data-s="idle"><span>1</span><span>問題分流、召集顧問</span></li>
+          <li data-s="idle"><span>2</span><span>星際激辯與戰略收斂</span></li>
+          <li data-s="idle"><span>3</span><span>製作最小成品</span></li>
+        </ol>
+        <p class="msg" id="msg" hidden></p>
+      </form>
+
+      <section class="card orbit-card">
+        <div class="label-eyebrow">召集星圖</div>
+        <h3>本次出席的顧問</h3>
+        <svg id="orbit" viewBox="0 0 320 320" role="img" aria-label="12 位行星顧問，亮起者為本次召集"></svg>
+        <div class="topics" id="topics"></div>
+      </section>
+
+      <section class="card history">
+        <div class="label-eyebrow">只存在這個瀏覽器</div>
+        <h3>最近的提案</h3>
+        <ul id="history"></ul>
+      </section>
+    </aside>
+
+    <main class="record">
+      <nav class="toc" aria-label="段落">
+        <a href="#s-conclusion">結論</a><a href="#s-problem">問題定義</a><a href="#s-debate">星際激辯</a>
+        <a href="#s-strategy">戰略收斂</a><a href="#s-roadmap">落地藍圖</a><a href="#s-cash">派工與金流</a>
+        <a href="#s-prompts">AI 指令</a><a href="#s-growth">行銷變現</a><a href="#s-mvp">最小成品</a><a href="#s-next">下一步</a>
+      </nav>
+      <div class="banner" id="banner">以下是範例輸出，示範智囊團會交付什麼。填寫左側提案單後按「召集智囊團」產生你的版本。</div>
+      <div id="out" class="record"></div>
+    </main>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------- 顧問資料（與 consultancy/advisors.py 一致）
+const ADVISORS = [
+  { id: "saturn", name: "土星", en: "Saturn", emoji: "🪐", title: "全球供應鏈與長期經營", dept: "合作夥伴與派工部", role: "外包品質把關與驗收標準", expertise: "供應鏈、核心競爭力、護城河、長期戰略、誠信經營", topics: ["business_model", "dispatch", "execution"] },
+  { id: "solaris", name: "熾陽星", en: "Solaris", emoji: "☀️", title: "談判、個人品牌與注意力行銷", dept: "營收成長部", role: "對客戶報價與對外包議價", expertise: "談判、交易設計、強勢定位、話題行銷、流量與轉換", topics: ["sales", "brand", "marketing", "dispatch"] },
+  { id: "mars", name: "火星", en: "Mars", emoji: "🚀", title: "第一性原理與快速迭代", dept: "產品與工程部", role: "MVP 與實驗設計，判斷自做／AI 做／外包", expertise: "第一性原理、刪除不必要步驟、快速測試、自動化", topics: ["product", "automation", "execution", "business_model"] },
+  { id: "venus", name: "金星", en: "Venus", emoji: "💎", title: "產品美學、體驗與品牌敘事", dept: "營收成長部", role: "交付前的品牌與體驗審查", expertise: "產品美學、使用者體驗、極簡、品牌故事", topics: ["product", "brand"] },
+  { id: "jupiter", name: "木星", en: "Jupiter", emoji: "🌐", title: "平台、資料與規模化", dept: "產品與工程部", role: "合作公司池平台化與 KPI", expertise: "資料、平台經濟、網路效應、規模化", topics: ["business_model", "marketing", "automation", "dispatch"] },
+  { id: "uranus", name: "天王星", en: "Uranus", emoji: "🧠", title: "AI 能力、安全與人機協作", dept: "AI 治理與風控部", role: "人工核准閘門與 AI 輸出驗證", expertise: "AI 能力邊界、AI 安全、人機分工、風險控制", topics: ["automation", "finance"] },
+  { id: "kepler", name: "開普勒星", en: "Kepler", emoji: "⚙️", title: "AI Agent 與落地工程", dept: "產品與工程部", role: "派工、驗收、付款流程自動化", expertise: "Agent 架構、自動化流水線、工具串接、可落地性", topics: ["automation", "execution", "product"] },
+  { id: "neptune", name: "海王星", en: "Neptune", emoji: "🎣", title: "長線布局與精準吸引", dept: "戰略委員會", role: "長線客群經營與接案時機", expertise: "長線布局、時機判斷、精準行銷、內容吸引", topics: ["marketing", "brand", "business_model"] },
+  { id: "polaris", name: "天樞星", en: "Polaris", emoji: "🪶", title: "資源槓桿與危機布局", dept: "合作夥伴與派工部", role: "派工部負責人：選合作公司與備援", expertise: "借力使力、合作資源、低成本槓桿、危機預防", topics: ["dispatch", "finance", "business_model"] },
+  { id: "pluto", name: "冥王星", en: "Pluto", emoji: "📜", title: "趨勢、應變與穩健起步", dept: "財務與金流部", role: "財務長：現金水位、毛利底線、停損線", expertise: "趨勢洞察、應變機制、現金流與節奏控制", topics: ["finance", "execution", "dispatch"] },
+  { id: "pulsar", name: "脈衝星", en: "Pulsar", emoji: "🧭", title: "利基市場與客群定位", dept: "戰略委員會", role: "決定哪些案子值得接", expertise: "利基市場、精準痛點、ICP、競品空位", topics: ["business_model", "marketing", "sales"] },
+  { id: "void", name: "幽暗星", en: "Void", emoji: "🔮", title: "直覺式風險提醒與潛意識洞察", dept: "AI 治理與風控部", role: "信任訊號與早期警訊（僅供參考）", expertise: "象徵性直覺、消費者潛意識、情緒與信任訊號", topics: ["brand", "sales"], symbolic: true },
+];
+const BY_ID = Object.fromEntries(ADVISORS.map(a => [a.id, a]));
+const TOPICS = {
+  business_model: "商業模式與定位", product: "產品或服務設計", brand: "品牌與內容", sales: "銷售、談判與定價",
+  marketing: "行銷與客戶獲取", automation: "AI、自動化與工具串接", finance: "營運、現金流與風險",
+  execution: "執行追蹤與優化", dispatch: "外包派工與合作夥伴",
+};
+const KEYWORDS = {
+  business_model: ["商業模式", "定位", "點子", "創業", "護城河", "變現", "business model"],
+  product: ["產品", "服務設計", "mvp", "功能", "體驗", "product"],
+  brand: ["品牌", "內容", "故事", "形象", "頻道", "brand"],
+  sales: ["銷售", "談判", "報價", "定價", "價格", "成交", "議價", "pricing", "sales"],
+  marketing: ["行銷", "流量", "集客", "廣告", "社群", "名單", "marketing", "seo"],
+  automation: ["ai", "自動化", "agent", "工具", "串接", "程式", "提示詞", "workflow"],
+  finance: ["現金", "金流", "付款", "收款", "毛利", "成本", "預算", "稅", "發票", "風險", "營運", "cash", "財務", "保留款", "準備金"],
+  execution: ["執行", "追蹤", "優化", "sop", "kpi", "進度", "時間表"],
+  dispatch: ["外包", "派工", "下包", "轉包", "合作公司", "供應商", "代收代付", "發包", "subcontract", "outsource", "vendor", "其他公司"],
+};
+const FALLBACK = ["saturn", "mars", "pluto", "pulsar", "polaris", "kepler"];
+
+function countOf(hay, needle) { let n = 0, i = 0; while ((i = hay.indexOf(needle, i)) !== -1) { n++; i += needle.length; } return n; }
+function triage(text) {
+  const q = text.toLowerCase();
+  const scores = Object.fromEntries(Object.entries(KEYWORDS).map(([t, ks]) => [t, ks.reduce((s, k) => s + countOf(q, k), 0)]));
+  const order = Object.keys(KEYWORDS);
+  const hits = order.filter(t => scores[t]).sort((a, b) => scores[b] - scores[a] || order.indexOf(a) - order.indexOf(b));
+  return hits.length ? hits : ["business_model"];
+}
+function selectAdvisors(topics, min = 4, max = 6) {
+  const weight = Object.fromEntries(topics.map((t, i) => [t, topics.length - i]));
+  let chosen = ADVISORS.map((a, i) => ({ a, i, s: a.topics.reduce((s, t) => s + (weight[t] || 0), 0) }))
+    .filter(x => x.s > 0).sort((x, y) => y.s - x.s || x.i - y.i).slice(0, max).map(x => x.a);
+  if (topics.includes("finance") || topics.includes("dispatch")) {
+    const forced = [BY_ID.pluto, BY_ID.polaris];
+    chosen = forced.concat(chosen.filter(a => !forced.includes(a))).slice(0, max);
+  }
+  for (const id of FALLBACK) { if (chosen.length >= min) break; if (!chosen.includes(BY_ID[id])) chosen.push(BY_ID[id]); }
+  return chosen;
+}
+
+// ---------------------------------------------------------------- 引擎：Claude（artifact）或本機 Grok 伺服器
+let engine = null;
+const engineEl = document.getElementById("engine");
+async function detectEngine() {
+  try {
+    if (window.claude && typeof window.claude.use === "function") {
+      const s = await window.claude.use("sample");
+      if (s) {
+        let downloads = null;
+        try { downloads = await window.claude.use("downloads"); } catch (_) {}
+        engine = { kind: "claude", s, downloads };
+        setEngine("on", "Claude｜使用你的帳號額度");
+        return;
+      }
+    }
+  } catch (_) {}
+  try {
+    const r = await fetch("api/health");
+    if (r.ok) {
+      const j = await r.json();
+      if (j.ok) { engine = { kind: "local", model: j.model }; setEngine("on", "本機 Grok｜" + j.model); return; }
+      setEngine("off", "本機伺服器未設定 XAI_API_KEY");
+      return;
+    }
+  } catch (_) {}
+  setEngine("off", "無法連線 AI，只能看範例");
+}
+function setEngine(state, text) { engineEl.dataset.state = state; engineEl.textContent = text; }
+
+function parseLooseJSON(text) {
+  try { return JSON.parse(text); } catch (_) {}
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) { try { return JSON.parse(fence[1]); } catch (_) {} }
+  const a = text.indexOf("{"), b = text.lastIndexOf("}");
+  if (a !== -1 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch (_) {} }
+  throw { code: "invalid_json", message: "unparseable", text };
+}
+async function ask(prompt, { json = false, onText, signal, cache } = {}) {
+  if (!engine) throw { code: "not_granted", message: "no engine" };
+  if (engine.kind === "claude") {
+    const opts = { signal, onText };
+    if (cache !== undefined) opts.cache = cache;
+    if (json) return engine.s.json(prompt, opts);
+    return (await engine.s(prompt, opts)).text;
+  }
+  const r = await fetch("api/sample", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, json }), signal })
+    .catch(e => { throw { code: e.name === "AbortError" ? "cancelled" : "upstream_error", message: String(e) }; });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw { code: r.status === 503 ? "not_granted" : "upstream_error", message: body.error || r.statusText };
+  if (onText) onText({ text: body.text, delta: body.text });
+  return json ? parseLooseJSON(body.text) : body.text;
+}
+const ERR = {
+  not_granted: "這個檢視無法使用 AI（未授權或未開放），目前只能看範例。",
+  sampling_disabled: "你的帳號目前無法從頁面呼叫 Claude。",
+  rate_limited: "呼叫太頻繁或已達用量上限，請稍後再按一次。",
+  session_expired: "登入已過期，請重新登入 claude.ai 後再試。",
+  refused: "這段內容無法處理，請調整想法的描述後再試。",
+  invalid_json: "回覆格式無法解析，請再按一次「召集智囊團」。",
+  prompt_too_large: "內容太長，請精簡想法描述。",
+  empty_completion: "沒有收到回覆，請把想法寫得更具體一些再試。",
+};
+const errText = e => ERR[e && e.code] || "連線中斷，請再試一次。";
+
+// ---------------------------------------------------------------- 提示詞
+const RULES = `你是「一人公司頂級 AI 專家智囊團（宇宙行星版）」的策略總召，主持 12 位行星顧問。顧問是商業分析視角模組，不代表任何真實人物。這家顧問團隊公司可以把工作下派給其他公司（自家關係企業、外部公司、個人工作者），所以每個建議都要考慮金流。
+
+工作原則：
+- 先給結論與推薦，再補推理；收斂成一個主方案，不堆砌互相矛盾的選項。
+- 優先：清楚、可驗證、低成本、可交付、可銷售、可持續；要能在 7 天內取得真實市場回饋，並能被一人公司穩定執行。
+- 事實、假設、推測分開；不捏造市場數據、價格行情、客戶見證、案例、引用或平台功能；不承諾營收。價格是建議值，要說明依據是假設。
+- 幽暗星的觀點只能寫成象徵性假設，不得寫成預言或事實。
+- 法律、稅務、投資、個資議題只做一般性風險提醒，並建議諮詢合格專業人士。
+- 金流紅線：AI 只提出建議與付款申請，不代替業主核准；轉包要維持毛利率 ≥ 30%；客戶款未入帳前不付外包（Pay-when-paid）；外包款保留 10% 到保固期滿；代收代付的錢不是公司收入、沒收到不得墊付；營業稅與代扣繳稅款不可挪作營運資金。
+- 資訊不足時列出最多 3 個關鍵問題，同時以合理假設繼續產出。`;
+
+function buildAdvicePrompt(input, topics, advisors) {
+  const roster = advisors.map(a => `- id=${a.id}｜${a.name}（${a.en}）｜${a.title}｜公司職責：${a.role}｜專長：${a.expertise}${a.symbolic ? "｜僅象徵性提醒" : ""}`).join("\n");
+  return `${RULES}
+
+本次分流：${topics.map(t => TOPICS[t]).join("、")}
+本次召集顧問（每位只就自己的專長發言，並指出一個盲點或反對理由）：
+${roster}
+
+使用者提案：
+- 想法：${input.idea}
+- 目標客群：${input.audience || "（未填，請合理假設並標示）"}
+- 可用資源／預算：${input.budget || "（未填，假設為一人公司、低預算）"}
+- 希望時程：${input.timeline || "（未填）"}
+- 偏好的最小成品：${input.mvpType || "由你判斷最能在本週取得真實回饋的成品"}
+- 是否考慮外包給其他公司：${input.outsource ? "是，請規劃派工與金流" : "未指定；只有在明顯划算時才建議外包"}
+
+只回覆一個 JSON 物件，內容用繁體中文，結構如下（字串欄位都要填，陣列至少一項，dispatch 不需要外包時給空陣列）：
+{
+  "conclusion": {"recommendation": "一句話推薦方案", "why_now": "為什麼現在做", "first_test": "本週可做、低成本、能拿到真實回饋的第一個驗證動作"},
+  "problem": {"goal": "使用者目標", "audience": "目標客群", "known": ["目前已知"], "unknown": ["尚未確認"], "questions": ["最多 3 個需要使用者回答的關鍵問題"]},
+  "debate": [{"advisor": "顧問 id（依上面召集順序，每位一筆）", "view": "核心觀點 1–2 句", "objection": "盲點或反對理由 1 句"}],
+  "consensus": ["共同看見"], "disagreements": ["關鍵分歧與取捨"], "biggest_risk": "最可能讓方案失敗的因素", "hypotheses": ["待驗證假設與最小測法"],
+  "strategy": {"positioning": "定位句", "promise": "核心承諾", "offer": "產品／服務內容", "pricing": "收費方式與建議價格（新台幣）", "moat": "差異化與護城河", "first_sale": "第一個可驗證的銷售事件", "not_doing": ["暫時不做的事"], "go_signal": "方案成立的判斷條件（可量化）", "stop_signal": "方案不成立或停損的條件（可量化）"},
+  "roadmap": [{"period": "0–7 天", "goal": "", "tasks": [""], "output": "可檢查的產出", "metric": "成功指標與門檻"}, {"period": "8–30 天", "goal": "", "tasks": [""], "output": "", "metric": ""}, {"period": "31–90 天", "goal": "", "tasks": [""], "output": "", "metric": ""}],
+  "dispatch": [{"item": "外包項目", "partner": "關係企業／外部公司／個人工作者", "mode": "subcontract 或 pass_through", "price": 對客戶售價整數, "cost": 外包成本整數, "acceptance": "驗收標準", "backup": "備援方案"}],
+  "cashflow": {"upfront_cash": "開始前需要準備的現金與用途", "collection": "向客戶收款的節奏（訂金／里程碑）", "lowest_point": "現金最低點會出現在何時、為什麼", "guardrails": ["這個方案的金流防線"]},
+  "prompts": [{"tool": "用在哪個工具", "input": "輸入資料", "prompt": "可直接複製的完整指令", "output": "預期輸出", "check": "人工檢查點", "fallback": "失敗時的重試或替代方案"}],
+  "growth": {"traffic": ["流量入口"], "lead_magnet": "免費誘因", "trust": ["建立信任的內容或證據"], "conversion": "轉換機制（CTA、預約、付款流程）", "retention": "交付與續購", "automation": ["可自動化的步驟與工具"], "metrics": ["追蹤指標"]},
+  "mvp": {"type": "最小成品類型", "title": "成品標題", "why": "為什麼先做這個成品", "outline": ["成品大綱 3–7 點"]},
+  "next_steps": ["今天就能做的動作，最多 3 個"]
+}
+prompts 給 1–2 個。roadmap 固定三段。`;
+}
+
+function buildMvpPrompt(input, r) {
+  const brief = {
+    想法: input.idea, 推薦方案: r.conclusion.recommendation, 第一個驗證動作: r.conclusion.first_test,
+    目標客群: r.problem.audience, 定位: r.strategy.positioning, 核心承諾: r.strategy.promise,
+    產品服務: r.strategy.offer, 收費: r.strategy.pricing, 差異化: r.strategy.moat,
+    派工: r.dispatch.map(d => `${d.item}（${d.partner}，${d.mode}，售價 ${d.price}／成本 ${d.cost}）`),
+    收款節奏: r.cashflow.collection,
+  };
+  return `你是一人公司智囊團的交付組。根據下面已經收斂的方案，直接寫出「${r.mvp.type}：${r.mvp.title}」這份今天就能拿去用的最小成品。
+
+要求：
+- 繁體中文 Markdown，只輸出成品本身，不要前言、不要解釋你在做什麼。
+- 內容要完整可用：真的標題、段落、問題、價格欄位、表格。需要使用者自己補的資訊用【待填：說明】標出。
+- 不捏造客戶見證、統計數據、案例或合作品牌；需要證據的位置寫【待補證據：要放什麼】。
+- 涉及外包或收款時，寫清楚付款條件、驗收標準與保留款。
+- 結尾加「## 使用前檢查」，列 3–5 個核取方塊（- [ ] 開頭）。
+
+成品大綱：
+${r.mvp.outline.map(x => "- " + x).join("\n")}
+
+方案摘要（JSON）：
+${JSON.stringify(brief, null, 1)}`;
+}
+
+// ---------------------------------------------------------------- 正規化模型輸出
+const str = v => (v == null ? "" : String(v));
+const arr = v => (Array.isArray(v) ? v : v ? [v] : []).map(x => (typeof x === "object" && x !== null ? x : str(x)));
+const num = v => { const n = Number(String(v ?? "").replace(/[^\d.-]/g, "")); return Number.isFinite(n) ? Math.round(n) : 0; };
+function normalize(r) {
+  r = r && typeof r === "object" ? r : {};
+  const o = (v) => (v && typeof v === "object" ? v : {});
+  const c = o(r.conclusion), p = o(r.problem), s = o(r.strategy), cf = o(r.cashflow), g = o(r.growth), m = o(r.mvp);
+  return {
+    conclusion: { recommendation: str(c.recommendation), why_now: str(c.why_now), first_test: str(c.first_test) },
+    problem: { goal: str(p.goal), audience: str(p.audience), known: arr(p.known).map(str), unknown: arr(p.unknown).map(str), questions: arr(p.questions).map(str).slice(0, 3) },
+    debate: arr(r.debate).filter(x => typeof x === "object").map(x => ({ advisor: str(x.advisor).toLowerCase(), view: str(x.view), objection: str(x.objection) })),
+    consensus: arr(r.consensus).map(str), disagreements: arr(r.disagreements).map(str), biggest_risk: str(r.biggest_risk), hypotheses: arr(r.hypotheses).map(str),
+    strategy: { positioning: str(s.positioning), promise: str(s.promise), offer: str(s.offer), pricing: str(s.pricing), moat: str(s.moat), first_sale: str(s.first_sale), not_doing: arr(s.not_doing).map(str), go_signal: str(s.go_signal), stop_signal: str(s.stop_signal) },
+    roadmap: arr(r.roadmap).filter(x => typeof x === "object").map(x => ({ period: str(x.period), goal: str(x.goal), tasks: arr(x.tasks).map(str), output: str(x.output), metric: str(x.metric) })),
+    dispatch: arr(r.dispatch).filter(x => typeof x === "object").map(x => ({ item: str(x.item), partner: str(x.partner), mode: str(x.mode).includes("pass") ? "pass_through" : "subcontract", price: num(x.price), cost: num(x.cost), acceptance: str(x.acceptance), backup: str(x.backup) })),
+    cashflow: { upfront_cash: str(cf.upfront_cash), collection: str(cf.collection), lowest_point: str(cf.lowest_point), guardrails: arr(cf.guardrails).map(str) },
+    prompts: arr(r.prompts).filter(x => typeof x === "object").map(x => ({ tool: str(x.tool), input: str(x.input), prompt: str(x.prompt), output: str(x.output), check: str(x.check), fallback: str(x.fallback) })),
+    growth: { traffic: arr(g.traffic).map(str), lead_magnet: str(g.lead_magnet), trust: arr(g.trust).map(str), conversion: str(g.conversion), retention: str(g.retention), automation: arr(g.automation).map(str), metrics: arr(g.metrics).map(str) },
+    mvp: { type: str(m.type) || "7 天驗證計畫", title: str(m.title) || "第一週驗證計畫", why: str(m.why), outline: arr(m.outline).map(str) },
+    next_steps: arr(r.next_steps).map(str).slice(0, 3),
+  };
+}
+
+// ---------------------------------------------------------------- 渲染
+const esc = s => str(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+const li = xs => xs.filter(Boolean).map(x => `<li>${esc(x)}</li>`).join("");
+const twd = n => "NT$ " + Math.round(n).toLocaleString("zh-TW");
+
+function inline(s) {
+  return esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/【([^】]+)】/g, "<mark>【$1】</mark>");
+}
+function mdTable(rows) {
+  const cells = r => r.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+  const body = rows.filter(r => !/^\s*\|?\s*:?-{2,}/.test(r));
+  if (!body.length) return "";
+  const [head, ...rest] = body;
+  return `<div class="tablewrap"><table><thead><tr>${cells(head).map(c => `<th>${inline(c)}</th>`).join("")}</tr></thead><tbody>${rest.map(r => `<tr>${cells(r).map(c => `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+function md(src) {
+  const lines = str(src).replace(/\r/g, "").split("\n");
+  const out = [];
+  const isList = l => /^\s*([-*+]|\d+[.)])\s+/.test(l);
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    let m;
+    if (/^\s*```/.test(l)) {
+      const buf = []; i++;
+      while (i < lines.length && !/^\s*```/.test(lines[i])) buf.push(lines[i++]);
+      i++; out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`); continue;
+    }
+    if ((m = l.match(/^(#{1,4})\s+(.*)/))) { const n = m[1].length + 1; out.push(`<h${n}>${inline(m[2])}</h${n}>`); i++; continue; }
+    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l)) { out.push("<hr>"); i++; continue; }
+    if (/^\s*\|/.test(l)) { const rows = []; while (i < lines.length && /^\s*\|/.test(lines[i])) rows.push(lines[i++]); out.push(mdTable(rows)); continue; }
+    if (isList(l)) {
+      const ordered = /^\s*\d/.test(l); const items = [];
+      while (i < lines.length && isList(lines[i])) items.push(lines[i++].replace(/^\s*([-*+]|\d+[.)])\s+/, ""));
+      const html = items.map(t => {
+        const task = t.match(/^\[( |x|X)\]\s*(.*)/);
+        return task ? `<li class="task"><span class="box">${task[1] === " " ? "☐" : "☑"}</span>${inline(task[2])}</li>` : `<li>${inline(t)}</li>`;
+      }).join("");
+      out.push(ordered ? `<ol>${html}</ol>` : `<ul>${html}</ul>`); continue;
+    }
+    if (/^\s*>/.test(l)) { const buf = []; while (i < lines.length && /^\s*>/.test(lines[i])) buf.push(lines[i++].replace(/^\s*>\s?/, "")); out.push(`<blockquote>${buf.map(inline).join("<br>")}</blockquote>`); continue; }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#{1,4}\s|\s*```|\s*\||\s*>)/.test(lines[i]) && !isList(lines[i])) para.push(lines[i++]);
+    out.push(`<p>${para.map(inline).join("<br>")}</p>`);
+  }
+  return out.join("");
+}
+
+function section(id, eyebrow, title, body) {
+  return `<section class="block" id="${id}"><h2><span class="label-eyebrow">${eyebrow}</span>${esc(title)}</h2>${body}</section>`;
+}
+function dispatchTable(ds) {
+  if (!ds.length) return `<p class="note">這個方案先不需要外包，全部由你和 AI 完成，現金只流入不流出。</p>`;
+  let price = 0, cost = 0;
+  const rows = ds.map(d => {
+    let marginCell;
+    if (d.mode === "pass_through") {
+      marginCell = `<span class="chip brass">代收代付・只算佣金</span>`;
+    } else {
+      price += d.price; cost += d.cost;
+      const mg = d.price > 0 ? (d.price - d.cost) / d.price : 0;
+      marginCell = `<span class="chip ${mg >= 0.3 ? "ok" : "warn"}">${(mg * 100).toFixed(0)}%${mg >= 0.3 ? "" : "・低於 30% 底線"}</span>`;
+    }
+    return `<tr><td>${esc(d.item)}</td><td>${esc(d.partner)}</td><td>${d.mode === "pass_through" ? "代收代付" : "轉包"}</td><td class="num">${twd(d.price)}</td><td class="num">${twd(d.cost)}</td><td>${marginCell}</td><td>${esc(d.acceptance)}</td><td>${esc(d.backup)}</td></tr>`;
+  }).join("");
+  const total = price > 0 ? `<tr><td><strong>轉包合計</strong></td><td></td><td></td><td class="num">${twd(price)}</td><td class="num">${twd(cost)}</td><td><span class="chip ${(price - cost) / price >= 0.3 ? "ok" : "warn"}">${(((price - cost) / price) * 100).toFixed(0)}%</span></td><td colspan="2" class="note">毛利 ${twd(price - cost)}</td></tr>` : "";
+  return `<div class="tablewrap"><table><thead><tr><th>派工項目</th><th>合作對象</th><th>金流模式</th><th class="num">對客戶售價</th><th class="num">外包成本</th><th>毛利率</th><th>驗收標準</th><th>備援</th></tr></thead><tbody>${rows}${total}</tbody></table></div>`;
+}
+
+function render(r, mvpText, opts = {}) {
+  const advisors = r._advisors || [];
+  const debate = r.debate.map(d => {
+    const a = BY_ID[d.advisor];
+    const who = a ? `${a.emoji} ${esc(a.name)}<small>${esc(a.title)}</small>` : esc(d.advisor);
+    return `<div class="voice"><div class="who">${who}</div><div><p>${esc(d.view)}</p><p class="obj"><b>盲點／反對：</b>${esc(d.objection)}</p>${a && a.symbolic ? `<p class="sym">象徵性假設，僅供參考</p>` : ""}</div></div>`;
+  }).join("");
+  const roadmap = `<div class="tablewrap"><table><thead><tr><th>時間</th><th>目標</th><th>任務</th><th>產出</th><th>成功指標</th></tr></thead><tbody>${r.roadmap.map(x => `<tr><td style="white-space:nowrap"><strong>${esc(x.period)}</strong></td><td>${esc(x.goal)}</td><td><ul>${li(x.tasks)}</ul></td><td>${esc(x.output)}</td><td>${esc(x.metric)}</td></tr>`).join("")}</tbody></table></div>`;
+  const prompts = r.prompts.map((p, i) => `<div class="prompt"><div class="row"><strong>${esc(p.tool)}</strong><button type="button" class="ghost small-btn" data-copy-prompt="${i}">複製指令</button></div><div class="meta"><span>輸入：${esc(p.input)}</span><span>輸出：${esc(p.output)}</span></div><pre>${esc(p.prompt)}</pre><div class="meta"><span>人工檢查：${esc(p.check)}</span><span>失敗時：${esc(p.fallback)}</span></div></div>`).join("");
+  const g = r.growth;
+  const funnel = [["流量入口", g.traffic.join("、")], ["免費誘因", g.lead_magnet], ["建立信任", g.trust.join("、")], ["轉換機制", g.conversion], ["交付與續購", g.retention], ["自動化", g.automation.join("、")], ["追蹤指標", g.metrics.join("、")]]
+    .filter(([, v]) => v).map(([k, v]) => `<div><span class="k">${k}</span><span>${esc(v)}</span></div>`).join("");
+  const mvpBody = mvpText ? md(mvpText) : "";
+  const html = [
+    section("s-conclusion", "結論", "推薦方案", `<div class="verdict"><p class="big">${esc(r.conclusion.recommendation)}</p><dl class="kv"><dt>為什麼現在做</dt><dd>${esc(r.conclusion.why_now)}</dd><dt>第一個驗證動作</dt><dd><strong>${esc(r.conclusion.first_test)}</strong></dd></dl></div>`),
+    section("s-problem", "問題定義", "目標與假設", `<dl class="kv"><dt>使用者目標</dt><dd>${esc(r.problem.goal)}</dd><dt>目標客群</dt><dd>${esc(r.problem.audience)}</dd><dt>目前已知</dt><dd><ul class="plain">${li(r.problem.known)}</ul></dd><dt>尚未確認</dt><dd><ul class="plain">${li(r.problem.unknown)}</ul></dd>${r.problem.questions.length ? `<dt>請你回答</dt><dd><ul class="plain">${li(r.problem.questions)}</ul></dd>` : ""}</dl>`),
+    section("s-debate", "星際激辯", `${r.debate.length} 位顧問的觀點與反對`, `<div class="card debate">${debate}</div><div class="quad"><div><h4>共同看見</h4><ul class="plain">${li(r.consensus)}</ul></div><div><h4>關鍵分歧</h4><ul class="plain">${li(r.disagreements)}</ul></div><div class="risk"><h4>最大風險</h4><p>${esc(r.biggest_risk)}</p></div><div><h4>待驗證假設</h4><ul class="plain">${li(r.hypotheses)}</ul></div></div>`),
+    section("s-strategy", "戰略收斂", "主方案", `<dl class="kv"><dt>定位</dt><dd>${esc(r.strategy.positioning)}</dd><dt>核心承諾</dt><dd>${esc(r.strategy.promise)}</dd><dt>產品／服務</dt><dd>${esc(r.strategy.offer)}</dd><dt>收費方式</dt><dd>${esc(r.strategy.pricing)}</dd><dt>差異化與護城河</dt><dd>${esc(r.strategy.moat)}</dd><dt>第一個銷售事件</dt><dd>${esc(r.strategy.first_sale)}</dd><dt>暫時不做</dt><dd><div class="topics">${r.strategy.not_doing.map(x => `<span class="chip">${esc(x)}</span>`).join("")}</div></dd></dl><div class="signals"><div class="go"><h4>繼續的訊號</h4><p>${esc(r.strategy.go_signal)}</p></div><div class="stop"><h4>停損的訊號</h4><p>${esc(r.strategy.stop_signal)}</p></div></div>`),
+    section("s-roadmap", "落地藍圖", "7／30／90 天", roadmap),
+    section("s-cash", "派工與金流", "誰來做、錢怎麼流", `${dispatchTable(r.dispatch)}<dl class="kv"><dt>開始前的現金</dt><dd>${esc(r.cashflow.upfront_cash)}</dd><dt>收款節奏</dt><dd>${esc(r.cashflow.collection)}</dd><dt>現金最低點</dt><dd>${esc(r.cashflow.lowest_point)}</dd><dt>金流防線</dt><dd><ul class="plain">${li(r.cashflow.guardrails)}</ul></dd></dl><p class="note">公司規則：轉包毛利率至少 30%、客戶款入帳後才付外包、保留 10% 到保固期滿、每筆付款由你本人核准。</p>`),
+    section("s-prompts", "AI 執行指令", "可以直接複製的指令", prompts || `<p class="note">這次沒有產生指令。</p>`),
+    section("s-growth", "行銷與變現", "集客到續購", `<div class="card funnel">${funnel}</div>`),
+    section("s-mvp", "最小成品", r.mvp.type, `<div class="deliver"><header><div><h3>${esc(r.mvp.title)}</h3><p>${esc(r.mvp.why)}</p></div><div class="tools"><button type="button" class="ghost small-btn" id="copyMvp" ${mvpText ? "" : "disabled"}>複製</button><button type="button" class="ghost small-btn" id="saveMvp" ${mvpText && opts.canSave ? "" : "hidden"}>下載 .md</button><button type="button" class="ghost small-btn" id="regenMvp" ${opts.canRegen ? "" : "hidden"}>重新製作</button></div></header>${mvpText ? `<div class="doc" id="doc">${mvpBody}</div>` : `<div class="pending ${opts.mvpPending ? "pulse" : ""}" id="doc">${opts.mvpPending ? "交付組正在製作最小成品…" : "尚未產生最小成品。"}</div>`}</div>`),
+    section("s-next", "下一步", "今天就做", `<ul class="next">${r.next_steps.map((x, i) => `<li><label for="nx${i}"><input type="checkbox" id="nx${i}"> ${esc(x)}</label></li>`).join("")}</ul>`),
+  ].join("");
+  out.innerHTML = html;
+  out.querySelectorAll("[data-copy-prompt]").forEach(b => b.addEventListener("click", () => copyText(r.prompts[+b.dataset.copyPrompt].prompt, b)));
+  const cp = document.getElementById("copyMvp"); if (cp) cp.addEventListener("click", () => copyText(current.mvpText, cp));
+  const sv = document.getElementById("saveMvp"); if (sv) sv.addEventListener("click", saveMvp);
+  const rg = document.getElementById("regenMvp"); if (rg) rg.addEventListener("click", () => makeMvp(true));
+  drawOrbit(advisors.map(a => a.id));
+  topicsEl.innerHTML = (r._topics || []).map(t => `<span class="chip brass">${esc(TOPICS[t] || t)}</span>`).join("");
+}
+function updateDoc(text) {
+  const doc = document.getElementById("doc");
+  if (!doc) return;
+  doc.className = "doc"; doc.innerHTML = md(text);
+}
+
+async function copyText(text, btn) {
+  const old = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = "已複製"; }
+  catch (_) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); btn.textContent = "已複製"; } catch (_) { btn.textContent = "請手動複製"; }
+    ta.remove();
+  }
+  setTimeout(() => { btn.textContent = old; }, 1600);
+}
+async function saveMvp() {
+  if (!engine || !engine.downloads || !current.mvpText) return;
+  const name = (current.result.mvp.title || "最小成品").replace(/[\\/:*?"<>|]/g, "").slice(0, 60) + ".md";
+  try { await engine.downloads.save({ filename: name, data: current.mvpText }); }
+  catch (e) { if (e && e.code !== "declined") showMsg("無法下載，請改用「複製」。"); }
+}
+
+// ---------------------------------------------------------------- 召集星圖
+const SVGNS = "http://www.w3.org/2000/svg";
+const orbitEl = document.getElementById("orbit");
+const topicsEl = document.getElementById("topics");
+function drawOrbit(onIds) {
+  const on = new Set(onIds);
+  const c = 160, rDot = 100, rText = 133;
+  const parts = [`<circle class="ring" cx="${c}" cy="${c}" r="${rDot}"/>`, `<circle class="ring" cx="${c}" cy="${c}" r="52" stroke-dasharray="2 4"/>`];
+  ADVISORS.forEach((a, i) => {
+    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / ADVISORS.length;
+    const x = c + rDot * Math.cos(ang), y = c + rDot * Math.sin(ang);
+    if (on.has(a.id)) parts.push(`<line class="ray" x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`);
+  });
+  ADVISORS.forEach((a, i) => {
+    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / ADVISORS.length;
+    const x = c + rDot * Math.cos(ang), y = c + rDot * Math.sin(ang);
+    const tx = c + rText * Math.cos(ang), ty = c + rText * Math.sin(ang) + 4;
+    const lit = on.has(a.id);
+    parts.push(`<circle class="dot ${lit ? "on" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${lit ? 8 : 5}"><title>${a.name}｜${a.title}</title></circle>`);
+    parts.push(`<text class="${lit ? "on" : ""}" x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle">${a.name}</text>`);
+  });
+  parts.push(`<circle class="core" cx="${c}" cy="${c}" r="26"/><text class="core-t" x="${c}" y="${c + 4}" text-anchor="middle">策略總召</text>`);
+  orbitEl.innerHTML = parts.join("");
+}
+
+// ---------------------------------------------------------------- 狀態、歷史
+const out = document.getElementById("out");
+const form = document.getElementById("form");
+const goBtn = document.getElementById("go");
+const stopBtn = document.getElementById("stop");
+const msgEl = document.getElementById("msg");
+const banner = document.getElementById("banner");
+const stepEls = [...document.querySelectorAll("#steps li")];
+const fields = ["idea", "audience", "budget", "timeline", "mvpType"];
+let current = { input: null, result: null, mvpText: "" };
+let ctl = null;
+const HKEY = "council.history.v1";
+
+function setSteps(active, doneUpTo) { stepEls.forEach((el, i) => { el.dataset.s = i < doneUpTo ? "done" : i === active ? "active" : "idle"; el.firstElementChild.textContent = i < doneUpTo ? "✓" : String(i + 1); }); }
+function showMsg(t) { msgEl.hidden = !t; msgEl.textContent = t || ""; }
+function busy(on) { goBtn.disabled = on; stopBtn.hidden = !on; }
+function readHistory() { try { return JSON.parse(localStorage.getItem(HKEY) || "[]"); } catch (_) { return []; } }
+function writeHistory(list) { try { localStorage.setItem(HKEY, JSON.stringify(list.slice(0, 8))); } catch (_) {} }
+function saveCurrent() {
+  if (!current.result) return;
+  const list = readHistory().filter(h => h.id !== current.id);
+  list.unshift({ id: current.id, at: new Date().toISOString(), input: current.input, result: current.result, mvpText: current.mvpText });
+  writeHistory(list); renderHistory();
+}
+function renderHistory() {
+  const ul = document.getElementById("history");
+  const list = readHistory();
+  if (!list.length) { ul.innerHTML = `<li class="empty">還沒有提案。你送出的提案會留在這個瀏覽器，方便回頭查看。</li>`; return; }
+  ul.innerHTML = list.map((h, i) => `<li><button type="button" data-h="${i}"><span>${esc(h.input.idea.slice(0, 34))}${h.input.idea.length > 34 ? "…" : ""}</span><small>${esc(new Date(h.at).toLocaleString("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }))}</small></button></li>`).join("");
+  ul.querySelectorAll("[data-h]").forEach(b => b.addEventListener("click", () => {
+    const h = readHistory()[+b.dataset.h]; if (!h) return;
+    current = { id: h.id, input: h.input, result: h.result, mvpText: h.mvpText || "" };
+    fields.forEach(f => { document.getElementById(f).value = h.input[f] || ""; });
+    document.getElementById("outsource").checked = !!h.input.outsource;
+    banner.hidden = true; showMsg(""); setSteps(-1, h.mvpText ? 3 : 2);
+    render(current.result, current.mvpText, { canSave: !!(engine && engine.downloads), canRegen: !!engine });
+  }));
+}
+
+// ---------------------------------------------------------------- 主流程
+form.addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const input = Object.fromEntries(fields.map(f => [f, document.getElementById(f).value.trim()]));
+  input.outsource = document.getElementById("outsource").checked;
+  if (!input.idea) { showMsg("請先寫下你的想法。"); return; }
+  let topics = triage([input.idea, input.audience, input.budget, input.timeline].join(" "));
+  if (input.outsource && !topics.includes("dispatch")) topics.push("dispatch");
+  const advisors = selectAdvisors(topics);
+  drawOrbit(advisors.map(a => a.id));
+  topicsEl.innerHTML = topics.map(t => `<span class="chip brass">${esc(TOPICS[t])}</span>`).join("");
+  showMsg(""); setSteps(1, 1);
+  if (!engine) { showMsg("目前無法連線 AI。可在 claude.ai 開啟此頁，或在本機執行 python -m consultancy serve 並設定 XAI_API_KEY。"); setSteps(-1, 0); return; }
+  busy(true);
+  ctl = new AbortController();
+  banner.hidden = true;
+  out.innerHTML = `<p class="pending pulse">${advisors.map(a => a.name).join("、")} 正在激辯，通常需要 30–90 秒…</p>`;
+  if (window.matchMedia("(max-width: 880px)").matches) out.scrollIntoView({ block: "start" });
+  try {
+    const raw = await ask(buildAdvicePrompt(input, topics, advisors), { json: true, signal: ctl.signal });
+    const result = normalize(raw);
+    result._advisors = advisors.map(a => ({ id: a.id })); result._topics = topics;
+    current = { id: String(Date.now()), input, result, mvpText: "" };
+    render(result, "", { mvpPending: true });
+    saveCurrent();
+    setSteps(2, 2);
+    await makeMvp(false);
+  } catch (e) {
+    if (e && e.code === "cancelled") { showMsg("已停止。"); }
+    else { showMsg(errText(e)); }
+    if (!current.result || current.input !== input) out.innerHTML = `<p class="note">這次沒有產生結果。調整後再按「召集智囊團」。</p>`;
+    setSteps(-1, current.input === input && current.result ? 2 : 0);
+  } finally { busy(false); }
+});
+
+async function makeMvp(regen) {
+  if (!current.result || !engine) return;
+  const r = current.result;
+  busy(true);
+  ctl = new AbortController();
+  setSteps(2, 2);
+  render(r, "", { mvpPending: true });
+  let raf = 0, latest = "";
+  try {
+    const text = await ask(buildMvpPrompt(current.input, r), {
+      signal: ctl.signal, cache: regen ? false : undefined,
+      onText: ({ text }) => { latest = text; if (!raf) raf = requestAnimationFrame(() => { raf = 0; updateDoc(latest); }); },
+    });
+    current.mvpText = text;
+    setSteps(-1, 3);
+  } catch (e) {
+    current.mvpText = (e && e.text) || "";
+    showMsg(e && e.code === "cancelled" ? "已停止製作最小成品。" : errText(e));
+    setSteps(-1, 2);
+  } finally {
+    if (raf) cancelAnimationFrame(raf);
+    render(r, current.mvpText, { canSave: !!(engine && engine.downloads), canRegen: true });
+    saveCurrent();
+    busy(false);
+  }
+}
+stopBtn.addEventListener("click", () => ctl && ctl.abort());
+
+// ---------------------------------------------------------------- 範例（首次開啟時顯示）
+const EXAMPLE_INPUT = { idea: "幫台灣中小型咖啡店做 AI 客服與 IG 內容代營運，自己負責策略，設計和程式想外包", audience: "台北、新北 1–3 家分店的獨立咖啡店老闆", budget: "一人、每週 20 小時、啟動金 5 萬", timeline: "30 天內拿到第一個付費客戶", mvpType: "服務提案與報價單", outsource: true };
+const EXAMPLE = normalize({
+  conclusion: { recommendation: "先賣「30 天 IG 代營運＋LINE 自動回覆」月費方案給 3 家獨立咖啡店，AI 客服整合放到第二階段。", why_now: "小店老闆普遍沒時間經營社群，AI 能把每篇內容的製作時間壓到很低，正適合一人公司接案。（假設，需訪談驗證）", first_test: "本週拜訪或私訊 15 家咖啡店，帶著一頁提案和三篇免費示範貼文，目標約到 3 場 20 分鐘的訪談。" },
+  problem: { goal: "30 天內拿到第一個付費客戶，建立可複製的交付流程", audience: "台北、新北 1–3 家分店的獨立咖啡店老闆", known: ["每週可投入 20 小時", "啟動金 5 萬", "設計與程式打算外包"], unknown: ["老闆願意為社群代營運付多少錢", "LINE 官方帳號的使用率", "外包設計師的實際報價"], questions: ["你過去有沒有餐飲或社群經營的作品可以展示？", "要不要限定只做 IG，先不碰 Facebook 和 Threads？", "外包對象是你認識的人，還是要從平台上找？"] },
+  debate: [
+    { advisor: "pluto", view: "月費制讓現金流穩定，但第一個月要先付設計外包費，訂金要收到月費的 50%。", objection: "如果三家店同時延遲付款，啟動金會在第三週見底。" },
+    { advisor: "polaris", view: "設計找一位主力加一位備援的個人設計師，按篇計價，不要簽月包。", objection: "個人設計師檔期不穩，旺季可能接不到。" },
+    { advisor: "solaris", view: "用「每月 12 篇、兩週見效」當報價錨點，再提供較便宜的 8 篇方案讓老闆選。", objection: "價格錨點太高，小店可能直接拒絕。" },
+    { advisor: "pulsar", view: "先鎖定剛開幕一年內、IG 追蹤數不到 3,000 的店，這群最急也最好量化成效。", objection: "新店的現金也最緊，付款風險較高。" },
+    { advisor: "mars", view: "AI 客服的開發成本高，先用 LINE 官方帳號內建的自動回覆做到八成效果。", objection: "內建功能做出來的效果可能不夠，難以和其他代營運業者區隔。" },
+    { advisor: "saturn", view: "每篇貼文要先訂好驗收清單：品牌色、店名、營業時間、拍攝角度。", objection: "驗收標準太細會拖慢外包速度。" },
+  ],
+  consensus: ["先做月費代營運，AI 客服延後", "外包按篇計價並保留驗收權", "收訂金後才發派工"],
+  disagreements: ["要不要給更便宜的入門方案：熾陽星主張用錨點，脈衝星擔心新店付不起"],
+  biggest_risk: "交付品質依賴外包設計師，第一位客戶若不滿意會影響口碑。",
+  hypotheses: ["老闆願意為每月 12 篇貼文付 NT$ 12,000：用 15 次訪談驗證", "AI 輔助後每篇製作時間低於 40 分鐘：自己先做 6 篇計時"],
+  strategy: { positioning: "專為獨立咖啡店做 IG 與 LINE 的一人代營運", promise: "每月 12 篇有店家風格的貼文，老闆每週只花 10 分鐘確認", offer: "IG 貼文 12 篇＋限動 8 則＋LINE 自動回覆設定", pricing: "月費 NT$ 12,000（12 篇）或 NT$ 8,000（8 篇），首月收 50% 訂金。價格為假設，需訪談驗證。", moat: "累積咖啡店專用的 AI 提示詞與視覺模板，交付越多越快", first_sale: "第一家店簽下首月方案並支付訂金", not_doing: ["自建 AI 客服系統", "Facebook 與 Threads", "實體攝影"], go_signal: "15 次接觸中有 3 場訪談、至少 1 家付訂金", stop_signal: "30 天內 0 家付款，或每篇製作時間超過 90 分鐘" },
+  roadmap: [
+    { period: "0–7 天", goal: "驗證需求", tasks: ["列 30 家目標咖啡店", "做 3 篇示範貼文", "接觸 15 家並約訪"], output: "訪談紀錄 3 份、示範貼文 3 篇", metric: "約到 3 場訪談" },
+    { period: "8–30 天", goal: "拿到第一個付費客戶", tasks: ["寄出提案與報價單", "收訂金後派工給設計師", "完成首月 12 篇"], output: "簽約 1 家、首月交付", metric: "收到第一筆訂金" },
+    { period: "31–90 天", goal: "建立可複製流程", tasks: ["整理提示詞與模板", "寫外包驗收 SOP", "用客戶成果做案例頁"], output: "SOP、模板庫、案例頁", metric: "3 家續約，每篇製作時間低於 40 分鐘" },
+  ],
+  dispatch: [
+    { item: "IG 貼文視覺設計（12 篇／月）", partner: "個人工作者", mode: "subcontract", price: 12000, cost: 4800, acceptance: "品牌色、店名、營業時間正確，一次修改內完成", backup: "第二位設計師＋Canva 模板自製" },
+    { item: "門市商品攝影（客戶直接委託）", partner: "外部公司", mode: "pass_through", price: 8000, cost: 6800, acceptance: "20 張可用照片，三天內交件", backup: "介紹客戶直接找攝影師，不經手款項" },
+  ],
+  cashflow: { upfront_cash: "約 NT$ 10,000：示範貼文素材、LINE 官方帳號付費方案、第一個月的外包款預備", collection: "首月簽約收 50% 訂金，月中交付一半後收尾款；第二個月起改為月初預收", lowest_point: "第一個月第 2 週：設計費已付、尾款未收", guardrails: ["收到訂金才派工", "設計費按篇驗收付款，保留 10% 到月底", "攝影採代收代付，收到客戶款才轉付"] },
+  prompts: [{ tool: "Claude 或 Grok", input: "店家資料：店名、主打商品、營業時間、三張店內照片的描述", prompt: "你是獨立咖啡店的社群小編。根據以下店家資料，寫 12 篇 IG 貼文：每篇包含主題、120 字內文案、3 個 hashtag、建議畫面。語氣溫暖、不誇大，不要編造活動或折扣。\n\n店家資料：{貼上}", output: "12 篇貼文草稿（表格）", check: "老闆確認營業時間與商品名稱", fallback: "改成一次生成 4 篇，分三次跑" }],
+  growth: { traffic: ["親自拜訪", "IG 私訊", "咖啡店老闆社群"], lead_magnet: "免費幫店家做 3 篇示範貼文", trust: ["示範貼文", "前後對比", "透明的交付流程"], conversion: "示範後約 20 分鐘訪談，現場給一頁報價單", retention: "每月 5 分鐘成效回報，季約享 9 折", automation: ["貼文草稿 AI 生成", "排程工具自動發布", "Google 表單收集客戶素材"], metrics: ["接觸數", "訪談率", "成交率", "每篇製作時間", "續約率"] },
+  mvp: { type: "服務提案與報價單", title: "咖啡店 IG 代營運｜30 天方案提案", why: "訪談時就能直接拿出來成交，也能驗證價格", outline: ["痛點", "方案內容", "交付流程", "價格與付款", "使用前檢查"] },
+  next_steps: ["列出 30 家目標咖啡店並標記 IG 追蹤數", "用下方指令做出 3 篇示範貼文", "私訊 5 家店約 20 分鐘訪談"],
+});
+EXAMPLE._advisors = ["pluto", "polaris", "solaris", "pulsar", "mars", "saturn"].map(id => ({ id }));
+EXAMPLE._topics = ["dispatch", "marketing", "finance", "sales"];
+const EXAMPLE_MVP = `# 咖啡店 IG 代營運｜30 天方案提案
+
+**提案對象：**【待填：店名】　**提案日期：**【待填】
+
+## 您可能正在遇到的狀況
+- 想經營 IG，但開店、備料、排班之後已經沒有力氣
+- 貼文斷斷續續，新客人搜尋時看到的資訊已經過時
+- LINE 官方帳號的訊息常常隔天才回
+
+## 方案內容
+| 項目 | 標準方案 | 輕量方案 |
+|---|---|---|
+| IG 貼文 | 12 篇／月 | 8 篇／月 |
+| 限時動態 | 8 則／月 | 4 則／月 |
+| LINE 自動回覆設定 | 含 | 含 |
+| 月費（未稅） | NT$ 12,000 | NT$ 8,000 |
+
+## 交付流程
+1. 第 1 週：30 分鐘訪談，蒐集品牌色、主打商品與照片
+2. 第 2 週：交付前 6 篇草稿，您用 10 分鐘確認
+3. 第 3–4 週：排程發布，月底寄出成效簡報
+
+## 付款方式
+- 簽約時支付首月 50% 訂金，交付一半後支付尾款
+- 第二個月起每月 5 日前預收當月費用
+- 若需商品攝影，由合作攝影師直接報價，本公司代收代付
+
+## 我們的承諾
+- 所有貼文發布前都經您確認，不會編造優惠或活動
+- 【待補證據：放 3 篇示範貼文的截圖】
+
+## 使用前檢查
+- [ ] 店名、營業時間、商品名稱都已核對
+- [ ] 價格已依訪談結果調整
+- [ ] 示範貼文已放進提案
+- [ ] 付款帳號與發票資訊已填寫`;
+
+function showExample() {
+  fields.forEach(f => { document.getElementById(f).value = EXAMPLE_INPUT[f]; });
+  document.getElementById("outsource").checked = true;
+  current = { id: null, input: EXAMPLE_INPUT, result: EXAMPLE, mvpText: EXAMPLE_MVP };
+  render(EXAMPLE, EXAMPLE_MVP, { canSave: false, canRegen: false });
+}
+
+showExample();
+renderHistory();
+detectEngine();
+</script>

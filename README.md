@@ -6,6 +6,7 @@
 - **派工到其他公司**：關係企業、外部公司、個人工作者；支援「轉包」與「代收代付」兩種模式
 - **金流引擎**：複式記帳、毛利底線、Pay-when-paid、安全準備金、保留款、營業稅與代扣繳、週現金預測（[金流設計](docs/cashflow.md)）
 - **智囊團召集器**：自動分流、挑 4–6 位顧問、把公司即時財務狀態放進 Grok 的 system prompt
+- **Docker + Supabase 部署**：一個容器、帳密保護，提案與金流事件存進 Supabase（[部署說明](docs/deploy.md)）
 - 純 Python 3.10+ 標準函式庫，無外部套件
 
 ## 網頁工作台
@@ -13,8 +14,9 @@
 `web/index.html`：輸入想法 → 自動分流召集 4–6 位顧問 → 星際激辯、戰略收斂、7/30/90 天藍圖、派工與金流表（自動檢查 30% 毛利底線）→ 串流產出可直接使用的最小成品（可複製／下載 .md）。
 
 - **線上版**：發布為 claude.ai Artifact，用你的 Claude 帳號額度執行，免設定。
-- **本機版**：`python -m consultancy serve` 後開 http://127.0.0.1:8066/ ，AI 呼叫轉給 Grok（需 `XAI_API_KEY`）。
-- 最近 8 筆提案只存在你的瀏覽器裡。
+- **Docker 版（建議）**：`cp .env.example .env` 填好後 `docker compose up -d --build`，開 http://127.0.0.1:8066/ 。AI 用 Grok，提案存在 Supabase，詳見 [docs/deploy.md](docs/deploy.md)。
+- **本機版**：`python -m consultancy serve`，同一個網址；沒設定 Supabase 時資料只存在記憶體。
+- 線上版的提案紀錄只存在你的瀏覽器裡。
 
 ## 快速開始
 
@@ -67,9 +69,13 @@ consultancy/
   council.py      分流、召集顧問、組 prompt
   llm.py          離線後端／xAI Grok 後端
   demo.py         示範情境
-  web.py          網頁工作台的本機伺服器（轉接 Grok）
+  web.py          網頁伺服器：頁面、Grok 轉接、提案與帳本 API、帳密保護
+  service.py      公司帳本服務：動作白名單、事件保存與重播
+  storage.py      Supabase（PostgREST）與記憶體儲存
 web/       index.html（網頁工作台，亦發布為 Artifact）
-docs/      organization.md、cashflow.md
+docs/      organization.md、cashflow.md、deploy.md
+supabase/  migrations/（資料表、RLS、append-only trigger）
+Dockerfile、docker-compose.yml、.env.example
 tests/     單元測試
 ```
 

@@ -1,0 +1,19 @@
+services:
+  workbench:
+    build:
+      context: .
+      args:
+        # Docker Hub 限流時在 .env 設 PYTHON_IMAGE=mirror.gcr.io/library/python:3.12-slim
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.12-slim}
+    image: star-council-workbench:latest
+    container_name: star-council-workbench
+    env_file: .env
+    ports:
+      # 預設只開給本機。要給其他電腦連，改成 "8066:8066"，並在前面加 HTTPS 反向代理。
+      - "127.0.0.1:8066:8066"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true

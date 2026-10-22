@@ -52,7 +52,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("<title>星際智囊團工作台</title>", body)
 
     def test_without_key_reports_offline(self):
-        self.assertEqual(json.loads(self.get("/api/health")[1]), {"ok": False, "model": None})
+        self.assertEqual(json.loads(self.get("/api/health")[1]), {"ok": False, "model": None, "storage": "memory"})
         status, body = self.post("/api/sample", {"prompt": "hi"})
         self.assertEqual(status, 503)
 

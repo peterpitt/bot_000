@@ -18,8 +18,8 @@ def main(argv: list[str] | None = None) -> None:
     ask.add_argument("--with-demo-books", action="store_true", help="附上示範公司的財務狀態")
     ask.add_argument("--show-prompt", action="store_true")
     srv = sub.add_parser("serve", help="啟動網頁工作台（AI 呼叫轉給 Grok）")
-    srv.add_argument("--host", default="127.0.0.1")
-    srv.add_argument("--port", type=int, default=8066)
+    srv.add_argument("--host", default=None, help="預設 127.0.0.1（或環境變數 HOST）")
+    srv.add_argument("--port", type=int, default=None, help="預設 8066（或環境變數 PORT）")
     args = parser.parse_args(argv)
 
     if args.cmd == "serve":
